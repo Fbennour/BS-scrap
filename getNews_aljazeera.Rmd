@@ -1,0 +1,148 @@
+---
+title: "get_News_ALJAZEERA"
+author: "Fatma"
+date: "11/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## SCRAP FUNCTIONS
+
+
+```{r libraries, include=FALSE}
+library(reticulate)
+library(dplyr)
+use_condaenv()
+source_python('py/pyFuncJazeera.py')
+
+```
+
+## --- DEFINITION
+
+
+```{r queries, message=FALSE, include=FALSE, paged.print=FALSE}
+fraud <- c('external fraud', 'internal fraud', 'coercion', 'collusion', 'misrepresentation',
+           'avoid an obligation', 'coercive practice', 'collusive practice',' influencing improperly the actions', 'obstructive practice', 'deliberately destroying', 'falsifying', 'altering','concealing of evidence material','making false statements to investigators','impede a Bank', 'allegations of a corrupt', 'fraudulent','intimidating', 'disclosing knowledge', 'Transactions not reported intentionally',
+'Unauthorized transaction', 'manipulation of documents', 'Theft of confidential information', 'Theft of confidential information or of intellectual property', 'drug traffickers'
+           )
+terrorism <- c(
+  'attacks upon the physical integrity', 'kidnapping','hostage taking', 'economic disruption','economic loss','seizure of aircraft','seizure of ships' ,'seizure of means of public or goods transport',
+  'development of biological and chemical weapons', 'endanger human life', 'recruitment for terrorism',
+  'training for terrorism', 'destabilising or destroying the fundamental political, constitutional, economic or social structures of a country or an international organisation', ' financing of terrorism',
+  'drug traffickers','arms dealers'
+)
+cybercrime <- c('phishing', 'fake email messages', 'misusing personal information','identity theft',
+                'hacking','spreading hate', 'inciting terrorism', 'distributing child pornography',
+                'grooming', "hacking")
+legislation_Regulatory <- c('law abiding','digital nomads', 'lack of proof of address', 'lack of proof of bills', 'debt documentation', 'without having a permanent fixed address','Tax avoidance', 'illegal' , 'tax evasion' ,'')
+Financial_Crime <-c('money laundering', 'financing of terrorism','fraud', 'bribery','insider trading',
+                    'disguise illegal origin of money', 'profits without jeopardizing their source',
+                    'legitimize” the ill-gotten', 'moving the funds to a place where they are less likely to attract attention', 'concealing or disguising the illicit origin', 'concealment or disguise of the true nature', 'aundering funds', 'anti-money laundering regimes','scattered accounts for laundering',
+'co-operate in anti-money laundering investigations', ' disguise the transfers', ' vehicles to launder money','organized criminal groups',' removal of billions of dollars from legitimate economic activities',
+'free and competitive markets and hampers', 'exacerbate inflation')
+
+
+
+```
+
+##-- ALJAZEERA site
+
+```{r }
+
+FRAUD <- data.frame()
+for (k in fraud) {
+  x <- stringr::str_replace_all(k,' ', '%20')
+  FRAUD <- FRAUD %>%
+    rbind(
+      as.data.frame(JZR_articles(x ,1, 5))
+    )
+}
+
+TERRORISM <- data.frame()
+for (k in terrorism) {
+  x <- stringr::str_replace_all(k,' ', '%20')
+  TERRORISM <- TERRORISM %>%
+    rbind(
+      as.data.frame(JZR_articles(x ,1, 5))
+    )
+}
+
+
+LEGISLATION <- data.frame()
+for (k in legislation_Regulatory) {
+  x <- stringr::str_replace_all(k,' ', '%20')
+  LEGISLATION <- LEGISLATION %>%
+    rbind(
+      as.data.frame(JZR_articles(x ,1, 5))
+    )
+}
+
+
+CYBERCRIME <- data.frame()
+for (k in cybercrime) {
+  x <- stringr::str_replace_all(k,' ', '%20')
+  CYBERCRIME <- CYBERCRIME %>%
+    rbind(
+      as.data.frame(JZR_articles(x ,1, 5))
+    )
+}
+
+
+FINCRIME <- data.frame()
+for (k in Financial_Crime) {
+  x <- stringr::str_replace_all(k,' ', '%20')
+  FINCRIME <- FINCRIME %>%
+    rbind(
+      as.data.frame(JZR_articles(x ,1, 5))
+    )
+}
+
+
+
+
+FRAUD <- FRAUD %>% 
+  mutate(topic = "FRAUD")
+
+
+TERRORISM <- TERRORISM %>% 
+  mutate(topic = "TERRORISM")
+
+LEGISLATION <- LEGISLATION %>% 
+  mutate(topic = "LEGISLATION")
+
+CYBERCRIME <- CYBERCRIME %>% 
+  mutate(topic = "CYBERCRIME")
+
+FINCRIME <- FINCRIME %>% 
+  mutate(topic = "FINCRIME")
+
+```
+
+##-- create corpuses
+
+
+```{r Libraries}
+
+
+corpus_ALJAZEERA <- rbind(
+  FRAUD,
+  TERRORISM,
+  LEGISLATION,
+  CYBERCRIME,
+  FINCRIME
+  
+)
+
+saveRDS(corpus_ALJAZEERA, "corpus8ALJAZEERA.rds")
+
+
+```
+
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

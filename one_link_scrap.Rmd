@@ -1,0 +1,67 @@
+---
+title: "test"
+author: "Fatma"
+date: "12/4/2020"
+output: html_document
+---
+
+
+```{r cars}
+get_news(query = "recorded assets higher amounts", pages = seq(from = 0, to = 10, by = 10))
+```
+
+```{r}
+get_news(query = "'illegal contract' AND 'competitive bidding'", pages = seq(from = 0, to = 10, by = 10))
+
+```
+
+```{r}
+get_news(query = "'assets' 'higher' 'amounts'", pages = seq(from = 0, to = 10, by = 10))
+```
+
+
+
+```{r}
+library(reticulate)
+source_python('pyFuncBBC.py')
+a='https://www.bbc.com/news/uk-politics-eu-referendum-36634407'
+
+data=BBC_link(a)
+```
+
+
+
+```{r}
+library(reticulate)
+source_python('pyFuncJazeera.py')
+b='https://www.aljazeera.com/news/2020/12/2/trump-releases-video-repeating-debunked-election-fraud-claims'
+
+dattaa=JZR_link(b)
+dattaa
+
+```
+
+
+
+
+```{r}
+library(reticulate)
+source_python('pyFuncBBC.py')
+
+link=a
+
+if(grepl( "www.aljazeera.com", link) ==T){
+  data=as.data.frame(JZR_link(link))
+  
+}else if(grepl( "www.bbc.com", link) ){
+  data= as.data.frame(BBC_link(link))
+
+}else {
+  print("link unavailabe")
+}
+
+data
+
+
+```
+

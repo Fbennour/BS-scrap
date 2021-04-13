@@ -1,0 +1,180 @@
+---
+title: "Recommendation engine"
+author: "Ali FRADY"
+date: "13/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r libraries, echo=FALSE, message=FALSE}
+library(reticulate)
+library(dplyr)
+library(tidytext)
+library(quanteda)
+library(ggplot2)
+library(tm)
+library(topicmodels)
+library(tidyverse)
+library(wordcloud)
+library(gutenbergr)
+library(textclean)
+library(foreach)
+library(parallel)
+library(textstem)
+library(gmodels)
+# use_condaenv()
+source_python("py/py_script.py")
+source('R_functions/Rfunctions.R')
+```
+
+
+
+```{r Get_news, echo=FALSE, message=FALSE  }
+Corpus <- readRDS('Corpus.rds')  
+head(tibble(Corpus))
+```
+
+
+
+```{r echo=FALSE, message=FALSE }
+ art_parg = SegmentizeText(as.data.frame(Corpus),'texts','\n') %>%
+  mutate(NCHAR = nchar(paragraph_text)) %>%
+  filter(NCHAR > 60) %>%
+  group_by(text_id) %>% mutate(n= n()) %>%
+  filter(n >2) %>% 
+  select(-n) %>%
+  mutate(paragraph_text =  gsub("[][#()*,.:;<=>^_`|~{}]\\", "", paragraph_text, fixed = TRUE))
+
+
+
+art_parg 
+
+```
+
+
+
+```{r echo=FALSE, message=FALSE}
+ NE_table = Extract_Named_Entities(art_parg)
+   NE_table %>% head()
+```
+
+
+
+```{r Remove_NE_from_articles, echo=FALSE, message=FALSE}
+art_rm_NE = NE_Cleansing(art_parg, 'paragraph_num', 'paragraph_text', group = FALSE, rm=TRUE,    NE_table %>% select(-Label) %>% unique())
+
+art_gpe_NE = NE_Cleansing(art_parg, 'paragraph_num', 'paragraph_text', group = TRUE, rm=FALSE,    NE_table %>% select(-Label) %>% unique())
+
+art_rm_NE
+art_gpe_NE
+```
+
+
+```{r Create_segments_of_paragraphs, echo=FALSE, message=FALSE }
+doc_id = 6
+art_rm_NE = art_rm_NE %>% select(text_id, paragraph_num, TEXT)
+art_gpe_NE = art_rm_NE %>% select(text_id, paragraph_num, TEXT)
+
+Clustering_doc_paragraphs(
+  art_rm_NE[art_rm_NE$text_id == art_rm_NE$text_id[doc_id],] %>%
+    as.data.frame() %>%
+    select(paragraph_num,TEXT),
+  doc_id)
+
+
+```
+
+
+```{r Segments_table, echo=FALSE, message=FALSE}
+#S = all_seg(art_rm_NE, "text_id", "paragraph_num", "TEXT")
+
+S %>%
+  head()
+art_rm_NE
+```
+
+
+```{r doc_clusters, echo=FALSE, message=FALSE}
+df = merge(S,art_rm_NE, by="paragraph_num") %>%
+           group_by(cluster) %>%
+           unnest_tokens(input = TEXT, output = word)  %>%
+           ungroup() %>%
+           anti_join(stop_words) %>%
+           filter(!str_detect(word, "\\d"))%>%
+           mutate(word = textstem::lemmatize_words(word)) %>%
+           mutate(word= tolower(word)) %>%
+           set_names('paragraph_num','cluster','text_id','word') %>%
+           count(cluster,word) %>%
+           bind_tf_idf(word, cluster, n) %>%
+           arrange(desc(tf_idf))
+       quant = quantile(df$tf_idf)
+       
+       df = df %>% 
+         filter(nchar(word)>2) %>%
+         filter(tf_idf >= quant[1]) %>% 
+         filter(tf_idf <= quant[4]) %>%
+         group_by(cluster) %>%
+         mutate(n = round(100 * n /sum(n),0)) %>%
+         ungroup() %>%
+         cast_dtm(document=cluster, term=word, value=n)
+      
+       
+       
+l= LDA_optimal(df, 2, 4, k_select=4, iter = 500, alpha = 0.5, seed = 1234, thin = 1)
+l$Plot
+l$min_perp$k
+
+
+
+terms(l$min_perp$model, 10)
+
+
+
+df2 = tidy(l$min_perp$model, "gamma") %>%
+  spread(topic, gamma) %>%
+  as.data.frame()
+
+
+
+
+SEG = "Seg-140-1"
+par = S[S$cluster == SEG,]$paragraph_num[2]
+IDtex = art_parg[art_parg$paragraph_num==par,]$text_id
+
+df3 = get_similarties(SEG,df2) %>%
+  filter(!is.na(Similarity)) %>%
+  set_names('Segments', 'Similarity') %>%
+  separate(Segments, into = c('element','paragraph_num','Document_seg'), sep = '-') %>%
+  select(paragraph_num, Similarity) %>%
+  mutate(paragraph_num = as.numeric(paragraph_num)) %>%
+  right_join(art_rm_NE)
+  
+
+
+
+art_parg[art_parg$paragraph_num == par,]$paragraph_text
+TOP  <- df3 %>% top_n(10) %>% select(text_id)
+texts<- Corpus %>%
+  filter(doc_id %in% TOP$text_id) %>%
+  select(Body)
+
+print('--------------------------------REQUEST--------------------------------')
+print('_______________________________________________________________________')
+print('_______________________________________________________________________')
+art_parg[art_parg$paragraph_num==par,]$paragraph_text
+print('_______________________________________________________________________')
+print('-------------------ARTICLE ASSOCIATED TO THE REQUEST-------------------')
+print('_______________________________________________________________________')
+print('_______________________________________________________________________')
+gsub("[^[:alnum:][:blank:]?&/\\-]", " ", art_parg[art_parg$text_id== IDtex,]$paragraph_text) 
+print('----------------------------      I          --------------------------')
+gsub("[^[:alnum:][:blank:]?&/\\-]", " ", texts$Body[1]) 
+print('----------------------------      II         ---------------------------')
+gsub("[^[:alnum:][:blank:]?&/\\-]", " ", texts$Body[2]) 
+print('----------------------------      III        ---------------------------')
+gsub("[^[:alnum:][:blank:]?&/\\-]", " ", texts$Body[3]) 
+```

@@ -1,0 +1,216 @@
+---
+title: "getNews"
+author: "Ali FRADY"
+date: "02/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+library(reticulate)
+library(stringr)
+source_python('py/imports.py')
+```
+
+
+```{r queries, message=FALSE, include=FALSE, paged.print=FALSE}
+
+Asset_misappropriation <- c(
+  "'Asset misappropriation'",
+  "stealing receipts",
+  "'stealing assets'",
+  "'disbursement fraud'"
+)
+
+
+Asset_Fraud<- c(
+  "'Asset Fraud'",
+  "'falsely recorded assets'",
+  "'falsely recorded revenue'",
+# "'recorded assets higher amounts' OR 'assets' AND 'higher' AND 'amounts'",
+# "'recorded revenue higher amounts' OR 'revenue' AND 'higher' AND 'amounts'",
+  "'Revenue Fraud'"
+)
+
+Understatement_of_Assets <- c(
+  "'Understatement Revenues'", 
+  "'Understatement Liabilities'"
+)
+
+Bid_rigging <- c(
+  "'Bid rigging'",
+  "'collusive fraud'",
+  "'illegal contract' AND 'competitive bidding'",
+  "'illegal contract without competitive bidding'"
+)
+
+billing_scheme <- c(
+  "'fraudulent payment to employee'",
+  "'fraudulent payment' AND 'employee'" 
+)
+
+Bribery <- c(
+  "'Bribery'",
+  "'soliciting value to influence act'",
+  "'bribe to influence act'",
+  "'Conflicts of Interest'",
+  "'Economic Extortion'",
+  "'Illegal Gratuities'"
+)
+
+Embezzlement <- c("'embezzlement of public funds'")
+
+fictitious_expense <- c(
+  "'fictitious expense'",
+  "'fake receipts'",
+  "'novelty receipts'"
+)
+
+Fictitious_revenues <- c(
+  "'Fictitious revenues'",
+  "'false sale'"
+)
+
+Fraud_prevention <- c(
+  "'Fraud prevention'",
+  "deter fraud from occurring"
+)
+
+Financial_Statement_Fraud <-c(
+  "'Financial Statement Fraud'",
+  "'financial misstatement'",
+  "'omitting facts' AND 'financial statements'",
+  "'omitting facts financial statements'",
+  "'omitting disclosures'",
+  "'misstating amounts'",
+  "'misapplying GAAP'"
+)
+
+Front_Loading <- c("Front Loading")
+
+ground_floor_opportunity <- c("ground floor opportunity", "Tax haven")
+
+
+
+
+
+Invoice_kickbacks <- c(
+  "Invoice kickbacks",
+  "overstated price'",
+  "illeagal gratuities"
+)
+
+Kiting_fraud <- c(
+  "'Kiting fraud'",
+  "conceal cash shortages"
+)
+
+
+occupational_fraud <- c("occupational fraud and abuse")
+
+
+Purchase_schemes <- c("'false invoicing'")
+
+fictitious_sales <- c(
+  "fictitious sales",
+  "altering sales receipts ",
+  "altering commission rates"
+)
+
+shell_company <- c(
+  "shell company",
+  "mirror an existing company",
+  "spelling deviation in the name of a company")
+
+Segregation_duties <- c(  "Segregation of duties")
+
+Tax_fraud <- c(
+  "Tax fraud",
+  "excise tax",
+  "violating duty of income tax returns",
+  "cheat accounting calculations of net income"
+)
+
+Vendor_Fraud <- c(
+  "Vendor Fraud",
+  "overcharge for purchased goods",
+  "shipment of inferior goods",
+  "non-shipment of paid goods"
+)
+
+White_collar_criminals <- c("White-collar criminals")
+
+
+Counterintelligence <- c( "Counterintelligence")
+
+l = list(Asset_misappropriation, Asset_Fraud, Understatement_of_Assets,
+         Bid_rigging, billing_scheme, Bribery, Embezzlement, fictitious_expense,
+         Fraud_prevention, Financial_Statement_Fraud, Front_Loading, 
+         ground_floor_opportunity, Headhunter_fees, Illegal_gratuities,
+         Invoice_kickbacks, Kiting_fraud, occupational_fraud, Purchase_schemes,
+         Purchase_schemes, fictitious_sales, shell_company, shell_company,
+         Segregation_duties, Tax_fraud, Vendor_Fraud, White_collar_criminals,
+         Counterintelligence
+         )
+names(l) <- c(
+  "Asset_misappropriation", "Asset_Fraud", "Understatement_of_Assets",
+         "Bid_rigging", "billing_scheme", "Bribery", "Embezzlement", "fictitious_expense",
+         "Fraud_prevention", "Financial_Statement_Fraud", "Front_Loading", 
+         "ground_floor_opportunity", "Headhunter_fees", "Illegal_gratuities",
+         "Invoice_kickbacks", "Kiting_fraud", "occupational_fraud", "Purchase_schemes",
+         "Purchase_schemes", "fictitious_sales", "shell_company", "shell_company",
+         "Segregation_duties", "Tax_fraud", "Vendor_Fraud", "White_collar_criminals",
+         "Counterintelligence"
+)
+reqGOOG <- c(
+  Asset_misappropriation, Asset_Fraud, Understatement_of_Assets,
+         Bid_rigging, billing_scheme, Bribery, Embezzlement, fictitious_expense,
+         Fraud_prevention, Financial_Statement_Fraud, Front_Loading, 
+         ground_floor_opportunity, Headhunter_fees, Illegal_gratuities,
+         Invoice_kickbacks, Kiting_fraud, occupational_fraud, Purchase_schemes,
+         Purchase_schemes, fictitious_sales, shell_company, shell_company,
+         Segregation_duties, Tax_fraud, Vendor_Fraud, White_collar_criminals,
+         Counterintelligence
+)
+```
+
+
+```{r}
+req_GOOG(query = "Money laundering", pages = seq(from = 0, to = 30, by = 10))
+```
+
+
+```{r}
+Articles_by_topic(query = "Money laundering", pages = seq(from = 0, to = 30, by = 10))
+```
+
+```{r}
+get_news(query = "'assets' AND 'higher' AND 'amounts'", pages = seq(from = 0, to = 10, by = 10))
+```
+
+
+
+```{r}
+df <- data.frame()
+for (k in reqGOOG) {
+  df <- df %>%
+  rbind(
+    as.data.frame(
+      get_news(query = k, pages = seq(from = 0, to = 30, by= 10))
+    )
+  )
+  #tibble::tibble(get_news(query = k, pages = seq(from = 0, to = 10, by= 10)))
+  # print(k)
+}
+```
+
+
+
+```{r}
+df %>%
+  tibble() %>%
+  head()
+```
